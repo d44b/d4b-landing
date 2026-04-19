@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# LLM-friendly summary
+# https://d4b.online/llms.txt
+
+Sitemap: https://d4b.online/sitemap.xml
