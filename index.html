@@ -8,11 +8,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
-  :root{--bg:#0b0f0c;--ink:#c8ffd6;--dim:#4a6a54;--accent:#7fffa8;--warn:#ffd37f;--err:#ff7f7f}
+  :root{--bg:#0b0f0c;--ink:#c8ffd6;--dim:#4a6a54;--accent:#7fffa8;--warn:#ffd37f;--err:#ff7f7f;--glow:rgba(127,255,168,.5)}
+  html[data-theme="amber"]{--bg:#100a04;--ink:#ffd9a8;--dim:#6e5330;--accent:#ffb74d;--warn:#ffd37f;--err:#ff8888;--glow:rgba(255,183,77,.45)}
+  html[data-theme="cyan"]{--bg:#05101a;--ink:#c6eaff;--dim:#3e6175;--accent:#66d9ef;--warn:#ffd37f;--err:#ff7f8a;--glow:rgba(102,217,239,.5)}
+  html[data-theme="magenta"]{--bg:#120814;--ink:#f3cce6;--dim:#6a415d;--accent:#ff79c6;--warn:#ffd37f;--err:#ff7a7a;--glow:rgba(255,121,198,.45)}
+  html[data-theme="paper"]{--bg:#f4f1ea;--ink:#111;--dim:#888;--accent:#c53828;--warn:#b87500;--err:#b00020;--glow:rgba(197,56,40,.35)}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{background:var(--bg);color:var(--ink);font-family:"JetBrains Mono",monospace;font-size:14px;line-height:1.6;position:relative;overflow-x:hidden}
-  body::before{content:"";position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(127,255,168,.04) 0,rgba(127,255,168,.04) 1px,transparent 1px,transparent 3px);pointer-events:none;z-index:1}
+  body::before{content:"";position:fixed;inset:0;background:repeating-linear-gradient(0deg,color-mix(in oklab,var(--accent) 6%,transparent) 0,color-mix(in oklab,var(--accent) 6%,transparent) 1px,transparent 1px,transparent 3px);pointer-events:none;z-index:1}
+  html[data-theme="paper"] body::before{display:none}
   body::after{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:2}
   .screen{position:relative;z-index:3;min-height:100vh;padding:32px 36px 60px;cursor:text}
   .status{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--accent);color:var(--bg);font-size:12px;line-height:1.4;padding:6px 16px;display:flex;justify-content:space-between;gap:16px;font-weight:500;letter-spacing:.02em}
@@ -28,7 +33,7 @@
   .e{color:var(--err)}
   a{color:var(--accent);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
   a:hover{background:var(--accent);color:var(--bg);text-decoration:none}
-  .ascii{color:var(--accent);white-space:pre;font-weight:700;font-size:clamp(9px,1.3vw,15px);line-height:1.05;margin:18px 0;filter:drop-shadow(0 0 10px rgba(127,255,168,.5))}
+  .ascii{color:var(--accent);white-space:pre;font-weight:700;font-size:clamp(9px,1.3vw,15px);line-height:1.05;margin:18px 0;filter:drop-shadow(0 0 10px var(--glow))}
   .prompt{display:flex;align-items:center;gap:0}
   .prompt .ps{color:var(--accent);white-space:pre}
   .prompt .ps2{color:var(--dim)}
@@ -49,6 +54,8 @@
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
   .chips button{background:transparent;color:var(--accent);border:1px solid var(--dim);padding:6px 10px;font-family:inherit;font-size:12px;cursor:pointer;transition:all .15s}
   .chips button:hover,.chips button:active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  .themebtn{background:transparent;color:var(--bg);border:1px solid var(--bg);padding:2px 8px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:500;letter-spacing:.02em;text-transform:lowercase}
+  .themebtn:hover{background:var(--bg);color:var(--accent)}
 </style>
 </head>
 <body>
@@ -57,7 +64,10 @@
 </div>
 <div class="status">
   <span>— NORMAL —<span class="sep"> · </span>d4b<span class="hide-sm"><span class="sep"> · </span>software studio</span></span>
-  <span><a href="mailto:janusz.maciejewski@gmail.com">janusz.maciejewski@gmail.com</a><span class="sep"> · </span>© 2026</span>
+  <span style="display:flex;align-items:center;gap:10px">
+    <button id="themebtn" class="themebtn" type="button" title="cycle theme">theme: green</button>
+    <span class="hide-sm"><a href="mailto:janusz.maciejewski@gmail.com">janusz.maciejewski@gmail.com</a><span class="sep"> · </span>© 2026</span>
+  </span>
 </div>
 
 <script>
@@ -74,10 +84,11 @@ const ASCII = `
 
 const history = [];
 let hIdx = -1;
+let userInteracted = false;
 
 function el(html, cls){ const d=document.createElement("div"); if(cls) d.className=cls; d.innerHTML=html; return d; }
-function print(html, cls="line"){ term.appendChild(el(html, cls)); window.scrollTo(0, document.body.scrollHeight); }
-function printRaw(node){ term.appendChild(node); window.scrollTo(0, document.body.scrollHeight); }
+function print(html, cls="line"){ term.appendChild(el(html, cls)); if(userInteracted) window.scrollTo(0, document.body.scrollHeight); }
+function printRaw(node){ term.appendChild(node); if(userInteracted) window.scrollTo(0, document.body.scrollHeight); }
 
 const commands = {
   help(){
@@ -181,7 +192,10 @@ function openMail(){
   setTimeout(()=>wrap.querySelector("#mfrom").focus(), 10);
 }
 
+function markInteracted(){ userInteracted = true; }
+
 function run(raw){
+  markInteracted();
   const line = raw.trim();
   if(!line){ newPrompt(); return; }
   history.push(line); hIdx = history.length;
@@ -207,7 +221,8 @@ function newPrompt(){
   row.appendChild(input);
   term.appendChild(row);
   currentInput = input;
-  input.focus();
+  const isTouch = window.matchMedia("(hover: none)").matches;
+  if(!isTouch || userInteracted) input.focus({preventScroll:true});
   input.addEventListener("keydown", (e) => {
     if(e.key === "Enter"){
       const val = input.value;
@@ -227,7 +242,7 @@ function newPrompt(){
       e.preventDefault(); commands.clear();
     }
   });
-  window.scrollTo(0, document.body.scrollHeight);
+  if(userInteracted) window.scrollTo(0, document.body.scrollHeight);
 }
 
 function renderChips(){
@@ -258,12 +273,31 @@ function boot(skipBanner){
   }
   renderChips();
   newPrompt();
+  if(!skipBanner) setTimeout(()=>window.scrollTo(0,0), 0);
 }
 
 screen.addEventListener("click", (e) => {
-  // keep focus in the input when clicking anywhere in the screen, unless user is selecting text
   if(window.getSelection().toString()) return;
-  if(currentInput) currentInput.focus();
+  markInteracted();
+  if(currentInput) currentInput.focus({preventScroll:true});
+});
+
+const THEMES = ["green","amber","cyan","magenta","paper"];
+const themeBtn = document.getElementById("themebtn");
+function applyTheme(name){
+  if(name === "green") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", name);
+  themeBtn.textContent = `theme: ${name}`;
+  try { localStorage.setItem("d4b_theme", name); } catch(e){}
+}
+let themeIdx = 0;
+try {
+  const saved = localStorage.getItem("d4b_theme");
+  if(saved && THEMES.includes(saved)){ themeIdx = THEMES.indexOf(saved); applyTheme(saved); }
+} catch(e){}
+themeBtn.addEventListener("click", () => {
+  themeIdx = (themeIdx + 1) % THEMES.length;
+  applyTheme(THEMES[themeIdx]);
 });
 
 boot();
