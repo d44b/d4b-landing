@@ -3,57 +3,248 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>d4b — pick a variant</title>
+<title>d4b — console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
+  :root{--bg:#0b0f0c;--ink:#c8ffd6;--dim:#4a6a54;--accent:#7fffa8;--warn:#ffd37f;--err:#ff7f7f}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
-  body{background:#111;color:#eee;font-family:"JetBrains Mono",monospace;font-size:13px;display:grid;grid-template-rows:auto 1fr auto;min-height:100vh;padding:28px 32px;gap:24px}
-  h1{font-family:"Instrument Serif",serif;font-style:italic;font-weight:400;font-size:clamp(28px,4vw,44px);letter-spacing:-.01em}
-  header{display:flex;justify-content:space-between;align-items:baseline;color:#888;text-transform:uppercase;letter-spacing:.1em;font-size:11px}
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;align-content:start}
-  @media(max-width:720px){.grid{grid-template-columns:1fr}}
-  .tile{position:relative;border:1px solid #2a2a2a;overflow:hidden;aspect-ratio:16/10;display:block;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s}
-  .tile:hover{border-color:#888;transform:translateY(-2px)}
-  .tile iframe{width:200%;height:200%;border:0;transform:scale(.5);transform-origin:top left;pointer-events:none}
-  .meta{position:absolute;inset:auto 0 0 0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:20px 18px 14px;display:flex;justify-content:space-between;align-items:end;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.14em}
-  .meta b{font-weight:500}
-  .meta span{color:#9cf}
-  footer{color:#666;font-size:11px;text-transform:uppercase;letter-spacing:.1em;display:flex;justify-content:space-between}
-  footer a{color:inherit}
+  body{background:var(--bg);color:var(--ink);font-family:"JetBrains Mono",monospace;font-size:14px;line-height:1.6;position:relative;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(127,255,168,.04) 0,rgba(127,255,168,.04) 1px,transparent 1px,transparent 3px);pointer-events:none;z-index:1}
+  body::after{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:2}
+  .screen{position:relative;z-index:3;min-height:100vh;padding:32px 36px 60px;cursor:text}
+  .status{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--accent);color:var(--bg);font-size:12px;line-height:1.4;padding:6px 16px;display:flex;justify-content:space-between;gap:16px;font-weight:500;letter-spacing:.02em}
+  .status a{color:var(--bg);text-decoration:none}
+  .status a:hover{text-decoration:underline}
+  .status .sep{opacity:.55}
+  @media (max-width:560px){.status{font-size:11px;padding:6px 12px}.status .hide-sm{display:none}}
+  .term{max-width:820px;margin:0 auto;width:100%}
+  .line{margin-bottom:4px;white-space:pre-wrap;word-break:break-word}
+  .p{color:var(--accent)}
+  .d{color:var(--dim)}
+  .w{color:var(--warn)}
+  .e{color:var(--err)}
+  a{color:var(--accent);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+  a:hover{background:var(--accent);color:var(--bg);text-decoration:none}
+  .ascii{color:var(--accent);white-space:pre;font-weight:700;font-size:clamp(9px,1.3vw,15px);line-height:1.05;margin:18px 0;filter:drop-shadow(0 0 10px rgba(127,255,168,.5))}
+  .prompt{display:flex;align-items:center;gap:0}
+  .prompt .ps{color:var(--accent);white-space:pre}
+  .prompt .ps2{color:var(--dim)}
+  .input{flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:inherit;font-size:inherit;line-height:inherit;caret-color:var(--accent);padding-left:8px}
+  .input::selection{background:var(--accent);color:var(--bg)}
+  .caret{display:inline-block;width:8px;height:1em;background:var(--accent);vertical-align:-2px;margin-left:6px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .back{position:fixed;top:22px;right:28px;color:var(--dim);font-size:12px;text-decoration:none;z-index:10}
+  .back:hover{color:var(--accent);text-decoration:underline}
+  .mail{padding:10px 14px;border:1px dashed var(--dim);margin:8px 0 10px;display:grid;gap:6px}
+  .mail label{color:var(--dim);font-size:12px}
+  .mail input,.mail textarea{width:100%;background:transparent;border:none;border-bottom:1px solid var(--dim);color:var(--ink);font-family:inherit;font-size:13px;outline:none;padding:4px 0;resize:vertical}
+  .mail input:focus,.mail textarea:focus{border-bottom-color:var(--accent)}
+  .mail .row{display:flex;gap:10px;align-items:center;margin-top:6px}
+  .mail button{background:var(--accent);color:var(--bg);border:none;font-family:inherit;font-size:12px;padding:8px 14px;cursor:pointer;font-weight:500;text-transform:uppercase;letter-spacing:.1em}
+  .mail button:hover{filter:brightness(1.1)}
+  .mail .hint{color:var(--dim);font-size:11px}
 </style>
 </head>
 <body>
-  <header>
-    <span>d4b.online · chooser</span>
-    <span>pick one →</span>
-  </header>
-  <main>
-    <h1 style="margin-bottom:18px">Cztery kierunki. Kliknij żeby zobaczyć.</h1>
-    <div class="grid">
-      <a class="tile" href="/v1/">
-        <iframe src="/v1/" loading="lazy" title="Monument"></iframe>
-        <div class="meta"><b>v1 · Monument</b><span>serif · cream</span></div>
-      </a>
-      <a class="tile" href="/v2/">
-        <iframe src="/v2/" loading="lazy" title="Signal"></iframe>
-        <div class="meta"><b>v2 · Signal</b><span>glow · rounded</span></div>
-      </a>
-      <a class="tile" href="/v3/">
-        <iframe src="/v3/" loading="lazy" title="Press"></iframe>
-        <div class="meta"><b>v3 · Press</b><span>editorial · italic</span></div>
-      </a>
-      <a class="tile" href="/v4/">
-        <iframe src="/v4/" loading="lazy" title="Console"></iframe>
-        <div class="meta"><b>v4 · Console</b><span>terminal · phosphor</span></div>
-      </a>
-    </div>
-  </main>
-  <footer>
-    <span>d4b</span>
-    <a href="mailto:janusz.maciejewski@gmail.com">janusz.maciejewski@gmail.com</a>
-  </footer>
+<div class="screen" id="screen">
+  <div class="term" id="term"></div>
+</div>
+<div class="status">
+  <span>— NORMAL —<span class="sep"> · </span>d4b<span class="hide-sm"><span class="sep"> · </span>software studio</span></span>
+  <span><a href="mailto:janusz.maciejewski@gmail.com">janusz.maciejewski@gmail.com</a><span class="sep"> · </span>© 2026</span>
+</div>
+
+<script>
+const term = document.getElementById("term");
+const screen = document.getElementById("screen");
+const PS1 = `<span class="p">d4b@studio</span><span class="d">:~$</span>`;
+const ASCII = `
+  ██████╗  ██╗  ██╗██████╗
+  ██╔══██╗ ██║  ██║██╔══██╗
+  ██║  ██║ ███████║██████╔╝
+  ██║  ██║ ╚════██║██╔══██╗
+  ██████╔╝      ██║██████╔╝
+  ╚═════╝       ╚═╝╚═════╝`;
+
+const history = [];
+let hIdx = -1;
+
+function el(html, cls){ const d=document.createElement("div"); if(cls) d.className=cls; d.innerHTML=html; return d; }
+function print(html, cls="line"){ term.appendChild(el(html, cls)); window.scrollTo(0, document.body.scrollHeight); }
+function printRaw(node){ term.appendChild(node); window.scrollTo(0, document.body.scrollHeight); }
+
+const commands = {
+  help(){
+    return [
+      "available commands:",
+      "  <span class='p'>about</span>      — what we do",
+      "  <span class='p'>services</span>   — how we help",
+      "  <span class='p'>engage</span>     — how to start a project",
+      "  <span class='p'>mail</span>       — send a brief (inline)",
+      "  <span class='p'>contact</span>    — open mail client",
+      "  <span class='p'>social</span>     — elsewhere",
+      "  <span class='p'>help · clear · date · sudo</span>"
+    ].join("\n");
+  },
+  about(){ return "d4b — an independent software studio.\nwe build platforms, products, and ecommerce systems end to end —\nfrom the database to the pixel, and the infrastructure underneath."; },
+  services(){ return [
+    "<span class='p'>· fullstack product development</span>",
+    "    web apps, apis, backends, dashboards",
+    "<span class='p'>· ecommerce</span>",
+    "    headless magento, custom platform, frontend, infra, integrations",
+    "<span class='p'>· mobile</span>",
+    "    native &amp; cross-platform apps, backend &amp; release pipelines",
+    "<span class='p'>· ai integrations</span>",
+    "    llm features, agents, automation wired into real products",
+    "<span class='p'>· platform engineering</span>",
+    "    internal developer platforms, gitops",
+    "<span class='p'>· kubernetes &amp; infrastructure</span>",
+    "    cloud · on-prem · hybrid",
+    "<span class='p'>· fractional tech lead</span>",
+    "    senior hands-on when you need one"
+  ].join("\n"); },
+  whoami(){ return "d4b is a one-person consultancy with a decade of shipping platforms\nthat outlast the people who built them. currently embedded at a\nventure-backed computer-vision company, available for new partners."; },
+  engage(){ return [
+    "how we work together:",
+    "  <span class='p'>1.</span> short intro call — 30 min, no pitch deck",
+    "  <span class='p'>2.</span> scoped engagement — fixed outcome, clear milestones",
+    "  <span class='p'>3.</span> ongoing partnership — retainer or fractional platform lead",
+    "",
+    "engagement models: <span class='p'>project</span> · <span class='p'>retainer</span> · <span class='p'>advisory</span>",
+    "typical start: <span class='p'>2–3 weeks</span> from first email.",
+    "",
+    "ready? run <span class='p'>mail</span> or <span class='p'>contact</span>."
+  ].join("\n"); },
+  social(){ return "· <a href='https://www.linkedin.com/in/janusz-maciejewski-1b76b5120/' target='_blank' rel='noopener'>linkedin — janusz maciejewski</a>\n· <a href='mailto:janusz.maciejewski@gmail.com'>janusz.maciejewski@gmail.com</a>"; },
+  date(){ return new Date().toString(); },
+  contact(){ window.location.href = "mailto:janusz.maciejewski@gmail.com"; return "<span class='d'>opening mail client…</span>"; },
+  mail(){ openMail(); return null; },
+  clear(){ term.innerHTML = ""; boot(true); return null; },
+  ls(){ return "about  services  engage  social  contact.txt  README.md"; },
+  cat(arg){
+    const f = (arg||"").toLowerCase().replace(/\.(txt|md)$/,"");
+    if(!f) return "<span class='e'>cat: missing operand</span>";
+    if(commands[f]) return commands[f]();
+    if(f==="readme") return "d4b — software, considered. try `help`.";
+    return `<span class='e'>cat: ${arg}: no such file</span>`;
+  },
+  echo(...a){ return a.join(" "); },
+  sudo(){ fetchQuote(); return "<span class='d'>summoning wisdom…</span>"; },
+  rm(){ return "<span class='e'>permission denied — this is a landing page.</span>"; },
+  exit(){ return "<span class='d'>you can close the tab.</span>"; },
+  vim(){ return "<span class='w'>vim: not installed. use `mail`.</span>"; },
+  emacs(){ return "<span class='w'>emacs: heresy.</span>"; }
+};
+
+async function fetchQuote(){
+  try {
+    const r = await fetch("https://api.adviceslip.com/advice", { cache: "no-store" });
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    const data = await r.json();
+    const advice = data && data.slip && data.slip.advice;
+    if(!advice){ print("<span class='e'>no advice returned.</span>"); return; }
+    print(`<span class='p'>»</span> ${advice}`);
+  } catch(err) {
+    print(`<span class='e'>fetch failed: ${err.message}</span>`);
+  }
+}
+
+function openMail(){
+  const wrap = document.createElement("div");
+  wrap.className = "mail";
+  wrap.innerHTML = `
+    <label>from — your email <input type="email" id="mfrom" placeholder="you@domain.com" required></label>
+    <label>company <input type="text" id="mcompany" placeholder="acme inc."></label>
+    <label>subject <input type="text" id="msub" placeholder="brief inquiry" value="[d4b] project inquiry"></label>
+    <label>brief <textarea id="mbody" rows="5" placeholder="what are you trying to ship? what's in the way?"></textarea></label>
+    <div class="row"><button id="msend">send →</button><span class="hint">opens your mail client · goes to janusz.maciejewski@gmail.com</span></div>
+  `;
+  term.appendChild(wrap);
+  const send = wrap.querySelector("#msend");
+  send.addEventListener("click", () => {
+    const from = wrap.querySelector("#mfrom").value.trim();
+    const company = wrap.querySelector("#mcompany").value.trim();
+    const sub  = wrap.querySelector("#msub").value.trim() || "[d4b] project inquiry";
+    const body = wrap.querySelector("#mbody").value.trim();
+    if(!from || !body){ print("<span class='e'>mail: need at least your email + brief.</span>"); return; }
+    const full = `${body}\n\n— ${from}${company ? "\n" + company : ""}`;
+    window.location.href = `mailto:janusz.maciejewski@gmail.com?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(full)}`;
+    print("<span class='d'>dispatched to mail client.</span>");
+    newPrompt();
+  });
+  setTimeout(()=>wrap.querySelector("#mfrom").focus(), 10);
+}
+
+function run(raw){
+  const line = raw.trim();
+  if(!line){ newPrompt(); return; }
+  history.push(line); hIdx = history.length;
+  const [cmd, ...args] = line.split(/\s+/);
+  const fn = commands[cmd.toLowerCase()];
+  if(!fn){ print(`<span class='e'>${cmd}: command not found</span> <span class='d'>— try \`help\`</span>`); newPrompt(); return; }
+  const out = fn(...args);
+  if(out !== null) print(out);
+  if(cmd.toLowerCase() !== "mail") newPrompt();
+}
+
+let currentInput = null;
+function newPrompt(){
+  const row = document.createElement("div");
+  row.className = "line prompt";
+  row.innerHTML = `<span class="ps">d4b@studio</span><span class="ps2">:~$</span>`;
+  const input = document.createElement("input");
+  input.className = "input";
+  input.type = "text";
+  input.setAttribute("autocomplete","off");
+  input.setAttribute("autocapitalize","none");
+  input.setAttribute("spellcheck","false");
+  row.appendChild(input);
+  term.appendChild(row);
+  currentInput = input;
+  input.focus();
+  input.addEventListener("keydown", (e) => {
+    if(e.key === "Enter"){
+      const val = input.value;
+      // freeze this prompt
+      const frozen = document.createElement("span");
+      frozen.textContent = val;
+      frozen.style.paddingLeft = "8px";
+      input.replaceWith(frozen);
+      currentInput = null;
+      run(val);
+    } else if(e.key === "ArrowUp"){
+      if(history.length && hIdx > 0){ hIdx--; input.value = history[hIdx]; e.preventDefault(); }
+    } else if(e.key === "ArrowDown"){
+      if(hIdx < history.length - 1){ hIdx++; input.value = history[hIdx]; }
+      else { hIdx = history.length; input.value = ""; }
+    } else if(e.key === "l" && e.ctrlKey){
+      e.preventDefault(); commands.clear();
+    }
+  });
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function boot(skipBanner){
+  if(!skipBanner){
+    print(`<span class='d'>d4b.online · console · ${new Date().toISOString().slice(0,10)}</span>`);
+    printRaw(el(ASCII, "ascii"));
+    print(`<span class='p'>software studio · b2b partner for product teams</span>`);
+    print(`type <span class='p'>help</span> — or try <span class='p'>services</span>, <span class='p'>engage</span>, <span class='p'>mail</span>.`);
+    print(`<span class='d'>↑/↓ for history · ctrl+L to clear</span>`);
+  }
+  newPrompt();
+}
+
+screen.addEventListener("click", (e) => {
+  // keep focus in the input when clicking anywhere in the screen, unless user is selecting text
+  if(window.getSelection().toString()) return;
+  if(currentInput) currentInput.focus();
+});
+
+boot();
+</script>
 </body>
 </html>
