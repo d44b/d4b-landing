@@ -46,6 +46,9 @@
   .mail button{background:var(--accent);color:var(--bg);border:none;font-family:inherit;font-size:12px;padding:8px 14px;cursor:pointer;font-weight:500;text-transform:uppercase;letter-spacing:.1em}
   .mail button:hover{filter:brightness(1.1)}
   .mail .hint{color:var(--dim);font-size:11px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+  .chips button{background:transparent;color:var(--accent);border:1px solid var(--dim);padding:6px 10px;font-family:inherit;font-size:12px;cursor:pointer;transition:all .15s}
+  .chips button:hover,.chips button:active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -227,14 +230,33 @@ function newPrompt(){
   window.scrollTo(0, document.body.scrollHeight);
 }
 
+function renderChips(){
+  const chipsRow = document.createElement("div");
+  chipsRow.className = "chips";
+  ["about","services","engage","mail","social"].forEach(cmd => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = cmd;
+    b.addEventListener("click", () => {
+      if(currentInput){
+        currentInput.value = cmd;
+        currentInput.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter"}));
+      }
+    });
+    chipsRow.appendChild(b);
+  });
+  term.appendChild(chipsRow);
+}
+
 function boot(skipBanner){
   if(!skipBanner){
     print(`<span class='d'>d4b.online · console · ${new Date().toISOString().slice(0,10)}</span>`);
     printRaw(el(ASCII, "ascii"));
     print(`<span class='p'>software studio · b2b partner for product teams</span>`);
-    print(`type <span class='p'>help</span> — or try <span class='p'>services</span>, <span class='p'>engage</span>, <span class='p'>mail</span>.`);
-    print(`<span class='d'>↑/↓ for history · ctrl+L to clear</span>`);
+    print(`type <span class='p'>help</span> — or tap below.`);
+    print(`<span class='d'>↑/↓ history · ctrl+L clear</span>`);
   }
+  renderChips();
   newPrompt();
 }
 
